@@ -1,4 +1,4 @@
-# Coursera Data Science Specialization
+  # Coursera Data Science Specialization
 # Building Data Products Course
 # Housing Prices Time Series Forecasting
 # John James
@@ -38,8 +38,7 @@ dashboardPage(skin = "green",
                                     menuSubItem("Set Parameters", icon = icon("caret-square-o-right"), tabName = "helpSetParameters"),
                                     menuSubItem("Analyze Models", icon = icon("gears"), tabName = "helpAnalyzeModels"),
                                     menuSubItem("Compare Models", icon = icon("check-circle"), tabName = "helpCompareModels")),
-                           menuSubItem("Market Forecaster", icon = icon("line-chart"),tabName = "helpMarketForecaster")
-                           )
+                           menuSubItem("Market Forecaster", icon = icon("line-chart"),tabName = "helpMarketForecaster"))
                 )# end of sidebarMenu
               ),#end of dashboardSidebar
               

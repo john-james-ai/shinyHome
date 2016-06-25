@@ -818,7 +818,7 @@ shinyServer(function(input, output, session) {
   })
   
   #Gets time series for a selected market.
-  getTimeSeries <- eventReactive(input$marketSelect, {
+  getTimeSeries <- eventReactive(input$analyze, {
     d <- selectHistoricalData()
     
     d <- as.numeric(as.vector(d))
@@ -930,25 +930,27 @@ shinyServer(function(input, output, session) {
   trainModel <- function(model, data) {
     m <- model()
     d <- data()
-    
+
+    msg <- paste("Training ", m, " algorithm")
+
     validate(
       need(!any(is.na(d)), "There are NA values in the training set for this market. Please change your selection criteria in Market Selector")
     )
     
-    
-    if (!is.null(d)) {
-      switch (m,
-              ARIMA = auto.arima(d, ic='aicc', stepwise=FALSE),
-              ETS = ets(d, ic='aicc', restrict=FALSE),
-              NEURAL = nnetar(d, p=12, size=25),
-              TBATS = tbats(d, ic='aicc', seasonal.periods=12),
-              BATS = bats(d, ic='aicc', seasonal.periods=12),
-              STLM = stlm(d, s.window=12, ic='aicc', robust=TRUE, method='ets'),
-              STS = StructTS(d, type = "level"),
-              NAIVE = naive(d, getForecastOptions()$periods)
+    withProgress(message = msg,
+      if (!is.null(d)) {
+        switch (m,
+                ARIMA = auto.arima(d, ic='aicc', stepwise=FALSE),
+                ETS = ets(d, ic='aicc', restrict=FALSE),
+                NEURAL = nnetar(d, p=12, size=25),
+                TBATS = tbats(d, ic='aicc', seasonal.periods=12),
+                BATS = bats(d, ic='aicc', seasonal.periods=12),
+                STLM = stlm(d, s.window=12, ic='aicc', robust=TRUE, method='ets'),
+                STS = StructTS(d, type = "level"),
+                NAIVE = naive(d, getForecastOptions()$periods)
       )
     }
-  }
+  )}
   
   
   #Format Accuracy Results into a table

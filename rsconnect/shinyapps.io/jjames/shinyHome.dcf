@@ -1,0 +1,9 @@
+name: shinyHome
+account: jjames
+server: shinyapps.io
+appId: 110403
+bundleId: 488919
+url: https://jjames.shinyapps.io/shinyHome/
+when: 1466835770.59649
+asMultiple: FALSE
+asStatic: FALSE
