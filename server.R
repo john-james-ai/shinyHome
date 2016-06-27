@@ -89,7 +89,9 @@ shinyServer(function(input, output, session) {
     current <- arrange(current, desc(Annual))
     current$Annual <- round(current$Annual * 100,2)
     current <- subset(current[1:10,], select = c(location, Annual))
-    p <- nPlot(Annual~location, data = current, type = "discreteBarChart", dom = "top10StatesBar", height = 180, width = 750)
+    p <- nPlot(Annual~location, data = current, type = "discreteBarChart", dom = "top10StatesBar")
+    p$params$width <- 1000
+    p$params$height <- 200
     p$xAxis(staggerLabels = TRUE)
     p$yAxis(axisLabel = "Annual Growth (%)", width = 50)
     return(p)
@@ -101,35 +103,60 @@ shinyServer(function(input, output, session) {
     current <- arrange(current, desc(Annual))
     current$Annual <- round(current$Annual * 100,2)
     current <- subset(current[1:10,], select = c(location, Annual))
-    p <- nPlot(Annual~location, data = current, type = "discreteBarChart", dom = "top10CitiesBar", height = 180, width = 750)
+    p <- nPlot(Annual~location, data = current, type = "discreteBarChart", dom = "top10CitiesBar")
+    p$params$width <- 1000
+    p$params$height <- 200
     p$xAxis(staggerLabels = TRUE)
     p$yAxis(axisLabel = "Annual Growth (%)", width = 50)
     return(p)
   })
   
   #Render Top 10 States by Home Value Growth TimeSeries
-  output$top10StatesTS <- renderPlot({
+  output$top10StatesTS <- renderChart({
+    #Get Current Data
     current <- currentState[ which(currentState$State != "United States"), ]
     current <- arrange(current, desc(Annual))
     current <- data.frame(current[1:10,3])
     colnames(current) <- "State"
+    
+    #Get Historical Data
     stateDF <- hviAllState
     stateDF <- merge(current, stateDF, by = "State")
     stateDF <- subset(stateDF, select = c(State, X2000.01:X2015.12))
     stateDF <- t(stateDF)
     colnames(stateDF) <- stateDF[1,]
     stateDF <- stateDF[-1,]
-    stateTS <- ts(stateDF, start = c(2000,1), end = c(2015,12), frequency = 12)
-    plot(stateTS, plot.type = "single", col = 1:ncol(stateTS), ylab = "Median Home Value")
-    legend("topleft", colnames(stateTS), col = 1:ncol(stateTS), lty = 1)
+    
+    #Format for Plotting 
+    timePeriod  <- seq.Date(as.Date('2000/1/1'), by = "month", length.out = 192) 
+    stateDF <- data.frame("Time" = timePeriod, stateDF)
+    stateDF <- melt(stateDF, id = "Time")
+    names(stateDF) <- c("Time", "State", "Value")
+
+    # Plot Forecast
+    p <- nPlot(Value ~ Time, group = "State", type = "lineChart", data = stateDF, dom = "top10StatesTS", height = 400, width = 680)
+    p$xAxis(
+      tickFormat = 
+        "#!
+      function(d){
+      f =  d3.time.format.utc('%Y-%m-%d');
+      return f(new Date( d*24*60*60*1000 ));
+      }
+      !#"
+    )
+    p$yAxis(tickFormat = "#! function(d) {return d3.format(',.0f')(d)} !#")
+    return(p)
   })
   
   #Render Top 10 Cities by Home Value Growth TimeSeries
-  output$top10CitiesTS <- renderPlot({
+  output$top10CitiesTS <- renderChart({
+    #Get Current Data
     current <- currentCity
     current <- arrange(current, desc(Annual))
     current <- data.frame(current[1:10,])
     current <- subset(current, select = location)
+    
+    #Get Historical Data
     cityDF <-  hviAllCity
     cityDF$location <- paste0(cityDF$City, ", ", cityDF$State)
     cityDF <- merge(current, cityDF, by = "location")
@@ -137,11 +164,27 @@ shinyServer(function(input, output, session) {
     cityDF <- t(cityDF)
     colnames(cityDF) <- cityDF[1,]
     cityDF <- cityDF[-1,]
-    cityTS <- ts(cityDF, start = c(2000,1), end = c(2015,12), frequency = 12)
-    plot(cityTS, plot.type = "single", col = 1:ncol(cityTS), ylab = "Median Home Value")
-    legend("topleft", colnames(cityTS), col = 1:ncol(cityTS), lty = 1)
-  })
-  
+    
+    #Format for Plotting 
+    timePeriod  <- seq.Date(as.Date('2000/1/1'), by = "month", length.out = 192) 
+    cityDF <- data.frame("Time" = timePeriod, cityDF)
+    cityDF <- melt(cityDF, id = "Time")
+    names(cityDF) <- c("Time", "City", "Value")
+    
+    # Plot Forecast
+    p <- nPlot(Value ~ Time, group = "City", type = "lineChart", data = cityDF, dom = "top10CitiesTS", height = 400, width = 680)
+    p$xAxis(
+      tickFormat = 
+        "#!
+      function(d){
+      f =  d3.time.format.utc('%Y-%m-%d');
+      return f(new Date( d*24*60*60*1000 ));
+      }
+      !#"
+    )
+    p$yAxis(tickFormat = "#! function(d) {return d3.format(',.0f')(d)} !#")
+    return(p)
+})
   
   
   ################################################################################
@@ -151,7 +194,7 @@ shinyServer(function(input, output, session) {
   output$levelQueryUi <- renderUI({
     radioButtons("analysisLevel", label = "Level of Analysis",
                  choices = list("State" = 1, "County" = 2, "City" = 3, "Zip"  = 4), 
-                 selected = 2)
+                 selected = 3)
   })
   
   # State query UI
@@ -235,7 +278,7 @@ shinyServer(function(input, output, session) {
     # Screen based upon home value index
     minValue <- as.numeric(input$hviQuery[1]) * 1000
     if (input$maxValue == TRUE) {
-      maxValue <- dfltMaxValue
+      maxValue <- dflt$maxValue
     } else {
       maxValue <- as.numeric(input$hviQuery[2]) * 1000
     }
@@ -468,94 +511,102 @@ shinyServer(function(input, output, session) {
   }
 
   output$valueByGrowth <- renderPlotly({
-    # Get Data
-    d <- getGrowthData()
     
-    # Subset into top results
-    if (!is.null(d)) {
-      numBars <- 1000
-      if (nrow(d) < numBars) {
-        numBars <- nrow(d)
+    withProgress(message = "Rendering Value By Growth Plot", {
+                 
+      # Get Data
+      d <- getGrowthData()
+      
+      # Subset into top results
+      if (!is.null(d)) {
+        numBars <- 1000
+        if (nrow(d) < numBars) {
+          numBars <- nrow(d)
+        }
+        d <- d[1:numBars,]
       }
-      d <- d[1:numBars,]
-    }
-    
-    # Prepare data based upon input horizon
-    horizon <- isolate(input$horizon)
-    if (horizon == "5 Year") {
-      horizon <- "Five"
-    } else if (horizon == "10 Year") {
-      horizon <- "Ten"
-    }
-    
-    d <- switch(horizon,
-                Monthly = subset(d, select = c(location, Value, Monthly)),
-                Quarterly = subset(d, select = c(location, Value, Quarterly)),  
-                Annual = subset(d, select = c(location, Value, Annual)),            
-                Five = subset(d, select = c(location, Value, Five_Year)),            
-                Ten = subset(d, select = c(location, Value, Ten_Year))
-    )
-    colnames(d) <- c("Location", "Value", "Growth")
-    
-    # Convert Growth Rate to Percentage
-    d$Growth = as.numeric(d$Growth) * 100
-    
-    # Designate axis labels
-    x <- list(title = "Median Home Value")
-    y <- list(title = "Percent Value Growth")
-    
-    # Prepare plot
-    p <- plot_ly(d, x = Value, y = Growth, text = Location, mode = "markers", color = Value, size = Value) %>%
-      layout(xaxis = x, yaxis = y)
+      
+      # Prepare data based upon input horizon
+      horizon <- isolate(input$horizon)
+      if (horizon == "5 Year") {
+        horizon <- "Five"
+      } else if (horizon == "10 Year") {
+        horizon <- "Ten"
+      }
+      
+      d <- switch(horizon,
+                  Monthly = subset(d, select = c(location, Value, Monthly)),
+                  Quarterly = subset(d, select = c(location, Value, Quarterly)),  
+                  Annual = subset(d, select = c(location, Value, Annual)),            
+                  Five = subset(d, select = c(location, Value, Five_Year)),            
+                  Ten = subset(d, select = c(location, Value, Ten_Year))
+      )
+      colnames(d) <- c("Location", "Value", "Growth")
+      
+      # Convert Growth Rate to Percentage
+      d$Growth = as.numeric(d$Growth) * 100
+      
+      # Designate axis labels
+      x <- list(title = "Median Home Value")
+      y <- list(title = "Percent Value Growth")
+      
+      # Prepare plot
+      p <- plot_ly(d, x = Value, y = Growth, text = Location, mode = "markers", color = Value, size = Value) %>%
+        layout(xaxis = x, yaxis = y)
+    })
   })
   
   #Render Top Markets by Growth
   output$topByGrowth <- renderChart({
     
-    # Get Data
-    d <- getGrowthData()
-    
-    # Subset into top results
-    if (!is.null(d)) {
-      numBars <- 10
-      if (nrow(d) < numBars) {
-        numBars <- nrow(d)
+    withProgress(message = "Rendering Top Markets by Growth Plot", {
+      # Get Data
+      d <- getGrowthData()
+      
+      # Subset into top results
+      if (!is.null(d)) {
+        numBars <- 10
+        if (nrow(d) < numBars) {
+          numBars <- nrow(d)
+        }
+        d <- d[1:numBars,]
       }
-      d <- d[1:numBars,]
-    }
-    
-    # Prepare data based upon input horizon
-    horizon <- isolate(input$horizon)
-    if (horizon == "5 Year") {
-      horizon <- "Five"
-    } else if (horizon == "10 Year") {
-      horizon <- "Ten"
-    }
-
-    d <- switch(horizon,
-                Monthly = subset(d, select = c(location, Monthly)),
-                Quarterly = subset(d, select = c(location, Quarterly)),            
-                Annual = subset(d, select = c(location, Annual)),            
-                Five = subset(d, select = c(location, Five_Year)),            
-                Ten = subset(d, select = c(location, Ten_Year))
-    )
-    colnames(d) <- c("location", "Growth")
-    d$Growth <- as.numeric(d$Growth) * 100
-    
-    #Prepare plot
-    p <- nPlot(Growth~location, data = d)
-    p$addParams(dom = "topByGrowth", type = "discreteBarChart")
-    p$set(width = 1200, height = 300)
-    p$xAxis(staggerLabels = TRUE)
-    p$yAxis(axisLabel = "Growth Rate (%)", width = 50)
-    return(p)
+      
+      # Prepare data based upon input horizon
+      horizon <- isolate(input$horizon)
+      if (horizon == "5 Year") {
+        horizon <- "Five"
+      } else if (horizon == "10 Year") {
+        horizon <- "Ten"
+      }
+  
+      d <- switch(horizon,
+                  Monthly = subset(d, select = c(location, Monthly)),
+                  Quarterly = subset(d, select = c(location, Quarterly)),            
+                  Annual = subset(d, select = c(location, Annual)),            
+                  Five = subset(d, select = c(location, Five_Year)),            
+                  Ten = subset(d, select = c(location, Ten_Year))
+      )
+      colnames(d) <- c("location", "Growth")
+      d$Growth <- as.numeric(d$Growth) * 100
+      
+      #Prepare plot
+      p <- nPlot(Growth~location, data = d)
+      p$addParams(dom = "topByGrowth", type = "discreteBarChart")
+      p$set(width = 1200, height = 300)
+      p$xAxis(staggerLabels = TRUE)
+      p$yAxis(axisLabel = "Growth Rate (%)", width = 50)
+      return(p)
+    })
   })
   
 
   # Render Market Data Table
   output$marketTbl <- renderDataTable({
     
-    d <- getGrowthData()
+    withProgress(message = "Rendering Market Table", {
+      d <- getGrowthData()
+    })
     
     #Drop location variable
     d$location <- NULL 
@@ -564,51 +615,71 @@ shinyServer(function(input, output, session) {
   
 
   output$valueHist <- renderPlot({
-    # Get Data
-    d <- getData()
-
-    # Render error message if not enough data to produce histogram
-    validate(
-      need(nrow(d) > 1, "Not enough data to produce histogram.")
-    )
-    
-    # Subset Data
-    d <- subset(d, select = c("location", "Value"))
-    
-    # Convert Value to ($000)
-    d$Value <- as.numeric(d$Value) / 1000
-    
-    #Set Parameters
-    bins <- seq(min(d$Value), max(d$Value), length.out = 31)
-    
-    #Draw Histogram
-    hist(as.numeric(d$Value), breaks = bins, col = "skyblue", border = "white",
-         xlab = "Median Home Values ($000)", 
-         main = "Histogram of Median Home Values")
+    withProgress(message = "Rendering Value Histogram", {
+      
+      # Get Data
+      d <- getData()
+  
+      # Render error message if not enough data to produce histogram
+      validate(
+        need(nrow(d) > 1, "Not enough data to produce histogram.")
+      )
+      
+      # Subset Data
+      d <- subset(d, select = c("location", "Value"))
+      
+      # Convert Value to ($000)
+      d$Value <- as.numeric(d$Value) / 1000
+      
+      #Set Parameters
+      bins <- seq(min(d$Value), max(d$Value), length.out = 31)
+      
+      #Draw Histogram
+      hist(as.numeric(d$Value), breaks = bins, col = "skyblue", border = "white",
+           xlab = "Median Home Values ($000)", 
+           main = "Histogram of Median Home Values")
+    })
   })
   
 
   #Render Top Markets by Home Value Growth TimeSeries
-  output$topMarketsTS <- renderPlot({
-    # Get Data
-    d <- getGrowthData()
+  output$topMarketsTS <- renderChart({
     
-    # Set number of markets to plot.  Markets are sorted by Growth (desc)
-    numMarkets <- 10
-    
-    # Merge current with historical data for number of markets
-    d <- mergeMarketData(d, numMarkets)
-
-    # Format for time series 
-    d <- subset(d, select = c(location, X2000.01:X2015.12))
-    d <- t(d)
-    colnames(d) <- d[1,]
-    d <- d[-1,]
-    dTS <- ts(d, start = c(2000,1), end = c(2015,12), frequency = 12)
-    
-    # Render plot
-    plot(dTS, plot.type = "single", col = 1:ncol(dTS), ylab = "Median Home Value")
-    legend("topleft", colnames(dTS), col = 1:ncol(dTS), lty = 1)
+    withProgress(message = "Rendering Top Market Time Series", {
+      
+      # Get Data
+      d <- getGrowthData()
+      
+      # Set number of markets to plot.  Markets are sorted by Growth (desc)
+      numMarkets <- 10
+      
+      # Merge current with historical data for number of markets
+      d <- mergeMarketData(d, numMarkets)
+  
+      # Format for Plotting
+      d <- subset(d, select = c(location, X2000.01:X2015.12))
+      d <- t(d)
+      colnames(d) <- d[1,]
+      d <- d[-1,]
+      timePeriod  <- seq.Date(as.Date('2000/1/1'), by = "month", length.out = 192)
+      d <- data.frame("Time" = timePeriod, d)
+      ts <- melt(d, id = "Time")
+      names(ts) <- c("Time", "Market", "Value")
+  
+      #Plot Data
+      p <- nPlot(Value ~ Time, group = "Market", type = "lineChart", data = ts, width = 1100, height = 600, dom = "topMarketsTS")
+      p$xAxis(
+        tickFormat = 
+          "#!
+        function(d){
+        f =  d3.time.format.utc('%Y-%m-%d');
+        return f(new Date( d*24*60*60*1000 ));
+        }
+        !#"
+      )
+      p$yAxis(tickFormat = "#! function(d) {return d3.format(',.0f')(d)} !#")
+      return(p)
+    })
   })
   
   ################################################################################
@@ -742,6 +813,10 @@ shinyServer(function(input, output, session) {
       need(!is.null(d), "There are no data to analyze. Please select a market and press 'Go' to process the analysis.")
     )
     
+    validate(
+      need(!(nrow(d) == 0), "There are no data to analyze. Please select another market and press 'Go' to process the analysis.")
+    )
+
     validate(
       need(!any(is.na(d)), "Unable to produce a timeseries with NA values. Please select a different market in the sidebar. ")
     )
@@ -947,7 +1022,7 @@ shinyServer(function(input, output, session) {
                 BATS = bats(d, ic='aicc', seasonal.periods=12),
                 STLM = stlm(d, s.window=12, ic='aicc', robust=TRUE, method='ets'),
                 STS = StructTS(d, type = "level"),
-                NAIVE = naive(d, getForecastOptions()$periods)
+                NAIVE = naive(d, 12)
       )
     }
   )}
@@ -1784,12 +1859,13 @@ shinyServer(function(input, output, session) {
   })
   
   #Forecast Summary Plot
-  output$forecastSummaryPlot <- renderPlot({
+  output$forecastSummaryPlot <- renderChart({
 
     input$forecast
     
     f <- isolate(getForecasts())
       
+    # Get time series
     ARIMA   <-   f[[1]]
     ETS     <-   f[[2]]
     NAIVE   <-   f[[3]]
@@ -1798,12 +1874,40 @@ shinyServer(function(input, output, session) {
     TBATS   <-   f[[6]]
     STLM    <-   f[[7]]
     STS     <-   f[[8]]
-
-    lgnd <- c("ARIMA", "ETS", "NAIVE", "NEURAL", "BATS", "TBATS", "STLM", "STS")
-    forecasts <- ts.union(ARIMA$mean, ETS$mean, NAIVE$mean, NEURAL$mean, BATS$mean, TBATS$mean, STLM$mean, STS$mean)
-    plot(forecasts, plot.type = "single", col = 1:ncol(forecasts))
-    legend("topleft", lgnd, col = 1:ncol(forecasts), lty = 1)
     
+    # Convert time series to numeric vector
+    ARIMA   <-   as.numeric(ARIMA$mean)
+    ETS     <-   as.numeric(ETS$mean)
+    NAIVE   <-   as.numeric(NAIVE$mean)
+    NEURAL  <-   as.numeric(NEURAL$mean)
+    BATS    <-   as.numeric(BATS$mean)
+    TBATS   <-   as.numeric(TBATS$mean)
+    STLM    <-   as.numeric(STLM$mean)
+    STS     <-   as.numeric(STS$mean)
+    
+    # Create time vector
+    timePeriod  <- seq.Date(as.Date('2016/1/1'), by = "month", length.out = input$forecastRange * 12) 
+    
+    # Format Time Series Data Frame
+    forecasts <- data.frame("Time" = timePeriod, ARIMA,	ETS,	NAIVE,	NEURAL,	BATS,	TBATS,	STLM,	STS)
+    forecasts <- melt(forecasts, id = "Time")
+    names(forecasts) <- c("Time", "Model", "Value")
+
+    # Render Plot
+    p <- nPlot(Value ~ Time, group = "Model", type = "lineChart", data = forecasts, dom = "forecastSummaryPlot")
+    p$xAxis(
+      tickFormat = 
+        "#!
+      function(d){
+      f =  d3.time.format.utc('%Y-%m-%d');
+      return f(new Date( d*24*60*60*1000 ));
+      }
+      !#"
+    )
+    p$params$width <- 980
+    p$params$height <- 400
+    p$yAxis(tickFormat = "#! function(d) {return d3.format(',.0f')(d)} !#")
+    return(p)
   })
   
   predictionData <- reactive({
@@ -1850,7 +1954,7 @@ shinyServer(function(input, output, session) {
     
       
     d <- predictionData()
-    p <- nPlot(Prediction~Model, data = d, type = "discreteBarChart", dom = "predictionPlot", height = 400, width = 600)
+    p <- nPlot(Prediction~Model, data = d, type = "discreteBarChart", dom = "predictionPlot", height = 400, width = 400)
     p$set(title = "Predicted Median Home Values at End of Forecast Period")
     p$xAxis(staggerLabels = TRUE)
     return(p)

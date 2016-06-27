@@ -43,6 +43,7 @@ dashboardPage(skin = "green",
               ),#end of dashboardSidebar
               
               dashboardBody(
+                includeCSS("www/custom.css"),
                 tabItems(
                   tabItem(tabName = "dashboard",
                           fluidPage(
@@ -60,7 +61,7 @@ dashboardPage(skin = "green",
                                      box(
                                        title = "Analytics for the Real Estate Market",
                                        width = 12,
-                                       height = 508,
+                                       height = 530,
                                        background = "orange",
                                        solidHeader = FALSE,
                                        collapsible = FALSE,
@@ -95,6 +96,7 @@ dashboardPage(skin = "green",
                                   title = "Top 10 States by Annual Home Value Growth",
                                   status = "primary",
                                   width = 12,
+                                  height = 255,
                                   solidHeader = FALSE,
                                   collapsible = TRUE,
                                   showOutput("top10StatesBar", "nvd3")
@@ -103,6 +105,7 @@ dashboardPage(skin = "green",
                                   title = "Top 10 Cities by Annual Home Value Growth",
                                   status = "primary",
                                   width = 12,
+                                  height = 255,
                                   solidHeader = FALSE,
                                   collapsible = TRUE,
                                   showOutput("top10CitiesBar", "nvd3")
@@ -117,7 +120,7 @@ dashboardPage(skin = "green",
                                      width = 12,
                                      solidHeader = FALSE,
                                      collapsible = TRUE,
-                                     plotOutput("top10StatesTS")
+                                     showOutput("top10StatesTS", "nvd3")
                                    ) #End of Box
                             ),# end of column
                             column(width = 6,
@@ -127,7 +130,7 @@ dashboardPage(skin = "green",
                                      width = 12,
                                      solidHeader = FALSE,
                                      collapsible = TRUE,
-                                     plotOutput("top10CitiesTS")
+                                     showOutput("top10CitiesTS", "nvd3")
                                    ) #End of Box
                             )# end of column
                           ),#end of fluidrow
@@ -196,7 +199,7 @@ dashboardPage(skin = "green",
                              solidHeader = FALSE,
                              width = 12,
                              background = "navy",
-                             sliderInput("hviQuery", label = "Home Value Range ($000)", min = 0, max = 2000, value = c(500,1000)),
+                             sliderInput("hviQuery", label = "Home Value Range ($000)", min = 0, max = 2000, value = c(0,1000)),
                              checkboxInput("maxValue", label = "Include all values exceeding $2m", value = FALSE)
                            ), # end of box
                            box(
@@ -256,6 +259,7 @@ dashboardPage(skin = "green",
                                          title = "Top Markets by Growth",
                                          status = "primary",
                                          width = 12,
+                                         height = 400,
                                          solidHeader = FALSE,
                                          collapsible = TRUE,
                                          showOutput("topByGrowth", "nvd3")
@@ -267,9 +271,10 @@ dashboardPage(skin = "green",
                                 title = "Median Home Value Time Series for Top Growth Markets",
                                 status = "primary",
                                 width = 12,
+                                height = 700,
                                 solidHeader = FALSE,
                                 collapsible = TRUE,
-                                plotOutput("topMarketsTS")
+                                showOutput("topMarketsTS", "nvd3")
                               ) #End of Box
                             )# end of fluidrow
                           )# end of box
@@ -585,14 +590,17 @@ dashboardPage(skin = "green",
                                        collapsible = TRUE,
                                        box(
                                          status = "primary",
-                                         width = 6,
+                                         width = 8,
+                                         height = 450,
                                          title = "Forecast Summary Plot",
                                          solidHeader = FALSE,
-                                         plotOutput("forecastSummaryPlot")
+                                         tags$style(' {width: 900px}'),
+                                         showOutput("forecastSummaryPlot", "nvd3")
                                        ),# end of box
                                        box(
                                          status = "primary",
-                                         width = 6,
+                                         width = 4,
+                                         height = 450,
                                          title = "Prediction Summary Plot",
                                          solidHeader = FALSE,
                                          showOutput("predictionPlot", "nvd3")

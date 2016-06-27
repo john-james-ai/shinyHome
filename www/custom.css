@@ -1,0 +1,35 @@
+#top10StatesBar, #top10StatesBar .rChart {
+    height: 200px;
+    width: 1000px;
+}
+
+#top10CitiesBar, #top10CitiesBar .rChart {
+    height: 200px;
+    width: 1000px;
+}
+
+#top10StatesTS, #top10StatesTS .rChart {
+    height: 400px;
+    width: 700px;
+}
+
+#top10CitiesTS, #top10CitiesTS .rChart {
+    height: 400px;
+    width: 700px;
+}
+
+#topByGrowth, #topByGrowth .rChart {
+    height: 400px;
+    width: 1200px;
+}
+
+#topMarketsTS, #topMarketsTS .rChart {
+    height: 650px;
+    width: 1200px;
+}
+
+#forecastSummaryPlot, #forecastSummaryPlot .rChart {
+    height: 500px;
+    width: 1000px;
+}
+
