@@ -1,21 +1,20 @@
-# Coursera Data Science Specialization
-# Building Data Products Course
-# Housing Prices Time Series Forecasting
+# shinyHome
+# Real Estate Analytics and Forecasting
 # John James
-# Start Date: May 23, 2015
+# Date: June 27, 2016
 
 # server.R
 
-################################################################################
+#===============================================================================
 #                               SHINYSERVER                                    #
-################################################################################
+#===============================================================================
 
 shinyServer(function(input, output, session) {
   
-  ################################################################################
-  ##                        DASHBOARD SERVER FUNCTIONS                          ##
-  ################################################################################
-  #Render National Home Value Index Box
+  #===============================================================================
+  #                        DASHBOARD SERVER FUNCTIONS                            #
+  #===============================================================================
+  # Render National Home Value Index Box
   output$usViBox <- renderValueBox({
     current <- currentState[ which(currentState$State == "United States"), ]
     valueBox(
@@ -24,7 +23,7 @@ shinyServer(function(input, output, session) {
     )
   })
   
-  #Highest Home Value Index by City Box
+  # Highest Home Value Index by City Box
   output$highestViBox <- renderValueBox({
     current <- currentCity[ which.max(currentCity$Value), ]
     valueBox(
@@ -33,7 +32,7 @@ shinyServer(function(input, output, session) {
     )
   })
   
-  #Render Annual Price Growth  Box
+  # Render Annual Price Growth  Box
   output$usAnnualBox <- renderValueBox({
     current <- currentState[ which(currentState$State == "United States"), ]
     valueBox(
@@ -42,7 +41,7 @@ shinyServer(function(input, output, session) {
     )
   })
   
-  #Render Highest Annual Price Growth  Box
+  # Render Highest Annual Price Growth  Box
   output$highestAnnualBox <- renderValueBox({
     current <- currentCity[ which.max(currentCity$Annual), ]
     valueBox(
@@ -51,7 +50,7 @@ shinyServer(function(input, output, session) {
     )
   })
   
-  #Render number of states box
+  # Render number of states box
   output$numStatesBox <- renderValueBox({
     valueBox(
       paste0(nrow(currentState)), paste("States"), 
@@ -59,7 +58,7 @@ shinyServer(function(input, output, session) {
     )
   })
 
-  #Render number of counties box
+  # Render number of counties box
   output$numCountiesBox <- renderValueBox({
     valueBox(
       paste0(nrow(currentCounty)), paste("Counties"), 
@@ -67,7 +66,7 @@ shinyServer(function(input, output, session) {
     )
   })
 
-  #Render number of cities box
+  # Render number of cities box
   output$numCitiesBox <- renderValueBox({
     valueBox(
       paste0(nrow(currentCity)), paste("Cities"), 
@@ -75,7 +74,7 @@ shinyServer(function(input, output, session) {
     )
   })
   
-  #Render number of cities box
+  # Render number of cities box
   output$numZipsBox <- renderValueBox({
     valueBox(
       paste0(nrow(currentZip)), paste("Zipcodes"), 
@@ -83,7 +82,7 @@ shinyServer(function(input, output, session) {
     )
   })
   
-  #Render Top 10 States bar chart
+  # Render Top 10 States bar chart
   output$top10StatesBar <- renderChart({
     current <- currentState[ which(currentState$State != "United States"), ]
     current <- arrange(current, desc(Annual))
@@ -97,7 +96,7 @@ shinyServer(function(input, output, session) {
     return(p)
   })
   
-  #Render Top 10 Cities bar chart
+  # Render Top 10 Cities bar chart
   output$top10CitiesBar <- renderChart({
     current <- currentCity
     current <- arrange(current, desc(Annual))
@@ -111,7 +110,7 @@ shinyServer(function(input, output, session) {
     return(p)
   })
   
-  #Render Top 10 States by Home Value Growth TimeSeries
+  # Render Top 10 States by Home Value Growth TimeSeries
   output$top10StatesTS <- renderChart({
     #Get Current Data
     current <- currentState[ which(currentState$State != "United States"), ]
@@ -187,10 +186,10 @@ shinyServer(function(input, output, session) {
 })
   
   
-  ################################################################################
-  ##                        MARKET EXPLORER FUNCTIONS                           ##
-  ################################################################################
-  #Level of Analysis UI
+  #===============================================================================
+  #                         MARKET EXPLORER FUNCTIONS                            #
+  #===============================================================================
+  # Level of Analysis UI
   output$levelQueryUi <- renderUI({
     radioButtons("analysisLevel", label = "Level of Analysis",
                  choices = list("State" = 1, "County" = 2, "City" = 3, "Zip"  = 4), 
@@ -682,9 +681,9 @@ shinyServer(function(input, output, session) {
     })
   })
   
-  ################################################################################
-  ##                        MARKET SELECTOR FUNCTIONS                           ##
-  ################################################################################
+  #===============================================================================
+  #                        MARKET SELECTOR FUNCTIONS                             #
+  #===============================================================================
   
   # State query UI
   output$stateUi <- renderUI({
@@ -702,7 +701,7 @@ shinyServer(function(input, output, session) {
     selectInput("county", label = "County:", choices = c(Choose='', as.character(counties)), selected = dflt$county, selectize = FALSE)
   })
   
-  
+  # Render City Query ui
   output$cityUi <- renderUI({
     cities <- NULL
     
@@ -724,7 +723,7 @@ shinyServer(function(input, output, session) {
     selectInput("city", label = "City:", choices = c(Choose='', as.character(cities)), selected = dflt$city, selectize = FALSE)
   })
   
-  
+  # Render Zip Query UI 
   output$zipUi <- renderUI({
     zips <- NULL
     
@@ -752,7 +751,7 @@ shinyServer(function(input, output, session) {
     
   })
   
-  #Determine level of market selected.
+  # Determine level of market selected.
   getLevel <- reactive({
     
     #Initialize Level
@@ -824,9 +823,9 @@ shinyServer(function(input, output, session) {
     return(d)
   })
 
-  ################################################################################
-  ##                        VALUE ANALYSIS FUNCTIONS                            ##
-  ################################################################################
+  #===============================================================================
+  #                         VALUE ANALYSIS FUNCTIONS                             #
+  #===============================================================================
   
   #Render Home Value Index Box for selected market
   output$hviBox <- renderValueBox({
@@ -916,9 +915,9 @@ shinyServer(function(input, output, session) {
     autoplot(Price, ts.colour = "blue") + theme_bw()
   })
   
-  ################################################################################
-  ##              FORECAST MODEL TRAINING FUNCTIONS                             ##
-  ################################################################################
+  #===============================================================================
+  ##              FORECAST MODEL TRAINING FUNCTIONS                              #
+  #===============================================================================
 
   # Render model select
   output$modelsUi <- renderUI({
@@ -1093,9 +1092,9 @@ shinyServer(function(input, output, session) {
     a$accuracy
   })
   
-  ################################################################################
-  ##                        MODEL COMPARISON FUNCTIONS                          ##
-  ################################################################################
+  #===============================================================================
+  #                         MODEL COMPARISON FUNCTIONS                           #
+  #===============================================================================
   #Render Home Value Index Box for selected market
   output$hviBox2 <- renderValueBox({
     
@@ -1340,14 +1339,14 @@ shinyServer(function(input, output, session) {
     
     validate(
       need(accuracyArima  != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")  %then%
-      need(accuracyEts  != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")  %then%
+      need(accuracyEts    != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")  %then%
       need(accuracyNaive  != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")  %then%
-      need(accuracyNeural  != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")  %then%
-      need(accuracyBats  != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")  %then%
+      need(accuracyNeural != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")  %then%
+      need(accuracyBats   != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")  %then%
       need(accuracyTbats  != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")  %then%
-      need(accuracyStlm  != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")  %then%
-      need(accuracySts  != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")  %then%
-      need(accuracySts  != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")
+      need(accuracyStlm   != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")  %then%
+      need(accuracySts    != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")  %then%
+      need(accuracySts    != "", "Unable to prepare performance metrics with this data.  Please select a different market in the sidebar.")
     )
     
     accuracyTbl <-  as.data.frame(rbind(round(accuracyArima$results[,2],3),
@@ -1368,7 +1367,7 @@ shinyServer(function(input, output, session) {
   
   
   
-  #Plot Arima model prediction 
+  # Plot Arima model prediction 
   output$arima <- renderPlot({
     
     withProgress(message = "Preparing Arima Forecast", {
@@ -1390,7 +1389,7 @@ shinyServer(function(input, output, session) {
     })
   })
   
-  #Plot ETS forecast
+  # Plot ETS forecast
   output$ets <- renderPlot({
     
     withProgress(message = "Preparing ETS Forecast", {
@@ -1412,7 +1411,7 @@ shinyServer(function(input, output, session) {
     })
   })
   
-  #Preparing NAIVE forecast plot
+  # Preparing NAIVE forecast plot
   output$naive <- renderPlot({
     
     withProgress(message = "Preparing Naive Forecast", {
@@ -1434,7 +1433,7 @@ shinyServer(function(input, output, session) {
     })
   })
 
-  #Preparing Neural Forecast Plot
+  # Preparing Neural Forecast Plot
   output$neural <- renderPlot({
     
     withProgress(message = "Preparing Neural Forecast", {
@@ -1456,7 +1455,7 @@ shinyServer(function(input, output, session) {
     })
   })
   
-  #Preparing TBATS forecast plot
+  # Preparing TBATS forecast plot
   output$bats <- renderPlot({
     
     withProgress(message = "Preparing BATS Forecast", {
@@ -1479,7 +1478,7 @@ shinyServer(function(input, output, session) {
   })
   
   
-  #Preparing TBATS forecast plot
+  # Preparing TBATS forecast plot
   output$tbats <- renderPlot({
     
     withProgress(message = "Preparing TBATS Forecast", {
@@ -1502,7 +1501,7 @@ shinyServer(function(input, output, session) {
   })
   
   
-  #Preparing STLM forecast plot
+  # Preparing STLM forecast plot
   output$stlm <- renderPlot({
     
     withProgress(message = "Preparing STLM Forecast", {
@@ -1525,7 +1524,7 @@ shinyServer(function(input, output, session) {
   })
   
   
-  #Prepare STS Forecast Plot
+  # Prepare STS Forecast Plot
   output$sts <- renderPlot({
     
     withProgress(message = "Preparing STS Forecast", {
@@ -1547,7 +1546,7 @@ shinyServer(function(input, output, session) {
     })
   })
   
-  #Render Performance Model Error Statistics Barchart
+  # Render Performance Model Error Statistics Barchart
   output$measurementsBar <- renderChart({
     
     e <- errorStats()
@@ -1582,9 +1581,9 @@ shinyServer(function(input, output, session) {
 
   })
   
-  ################################################################################
-  ##                        MARKET FORECAST FUNCTIONS                           ##
-  ################################################################################
+  #===============================================================================
+  #                         MARKET FORECAST FUNCTIONS                            #
+  #===============================================================================
   #Calculate Arima Forecast
   arimaForecastData <- reactive({
     

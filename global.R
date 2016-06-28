@@ -1,8 +1,7 @@
-# Coursera Data Science Specialization
-# Building Data Products Course
-# Housing Prices Time Series Forecasting
+# shinyHome
+# Real Estate Analytics and Forecasting
 # John James
-# Start Date: May 23, 2015
+# Date: June 27, 2016
 
 # global.R
 
