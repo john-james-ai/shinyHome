@@ -51,7 +51,7 @@ When running the structural model for time series by maximum likelihood (StructT
 Error in optim(start, f, method = method, hessian = TRUE, ...) :    L-BFGS-B needs finite values of 'fn'
 
 ## Credits and Acknowledgements
-* Huge acknowledgement to Zillow Research for the data. http://www.zillow.com/research/data/
+* Huge acknowledgement to Zillow Research for the data.
 * Ramnath Vaidyanathan  for a beautiful charting package
 * Joe Cheng for his active support in the githubsphere
 * Avril Coghlan for the not so little book on R for time series.
